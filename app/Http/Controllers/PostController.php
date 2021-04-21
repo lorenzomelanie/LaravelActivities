@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
-    
     // only authenticated user is allowed to create/update and delete a post 
     public function __construct()
     {
@@ -24,8 +23,6 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
-
         $posts = Post::get();
         return view('posts.index', compact('posts'));
 
@@ -38,7 +35,6 @@ class PostController extends Controller
      */
     public function create()
     {
-        //
         return view('posts.create');
     }
 
@@ -50,10 +46,30 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-       // dd($request);
+        $request->validate([
+            'title' => 'required|unique:posts|max:255',
+            'description' => 'required'
+        ]);
+
+        if($request->hasFile('img')){
+
+            $filenameWithExt = $request->file('img')->getClientOriginalName();
+
+            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+
+            $extension = $request->file('img')->getClientOriginalExtension();
+
+            $fileNameToStore = $filename.'_'.time().'.'.$extension;
+
+            $path = $request->file('img')->storeAs('public/img', $fileNameToStore);
+        } else{
+            $fileNameToStore = '';
+        }
+
         $post = new Post();
         $post->title = $request->title;
         $post->description = $request->description;
+        $post->img = $fileNameToStore;
         $post->save();
 
         return redirect('/posts');
@@ -67,9 +83,7 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        //
         $post = Post::find($id);
-               //select * from users where id = $id
       
         return view('posts.show', compact('post'));
 
@@ -83,9 +97,7 @@ class PostController extends Controller
      */
     public function edit($id)
     {
-        //
         $post = Post::find($id);
-        //select * from users where id = $id
 
         return view('posts.edit', compact('post'));
     }
@@ -99,7 +111,6 @@ class PostController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
         $post = Post::find($id);
         $post->title = $request->title;
         $post->description = $request->description;
@@ -116,7 +127,6 @@ class PostController extends Controller
      */
     public function destroy($id)
     {
-        //
         $post = Post::find($id);
         $post->delete();
 
