@@ -35,7 +35,6 @@
                                             @method('DELETE')
                                             @csrf
                                             <button type="submit" class="btn btn-danger">Delete </button>
-
                                     </form>
                               </tr>
                             @endforeach
@@ -43,6 +42,7 @@
                     </table>
                 </div>
             </div>
+            Total # of Post: {{ $count }}
         </div>
     </div>
 </div>

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Post;
+use App\User;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+
 
 class PostController extends Controller
 {
@@ -23,9 +26,10 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::get();
-        return view('posts.index', compact('posts'));
-
+        $user = User::find(Auth::id()); 
+        $posts = $user->posts()->orderBy('created_at','desc')->get();
+        $count = $user->posts()->where('title','!=','')->count();
+        return view('posts.index', compact('posts', 'count'));
     }
 
     /**
@@ -50,29 +54,27 @@ class PostController extends Controller
             'title' => 'required|unique:posts|max:255',
             'description' => 'required'
         ]);
-
+        
         if($request->hasFile('img')){
-
             $filenameWithExt = $request->file('img')->getClientOriginalName();
-
             $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
-
             $extension = $request->file('img')->getClientOriginalExtension();
-
             $fileNameToStore = $filename.'_'.time().'.'.$extension;
-
             $path = $request->file('img')->storeAs('public/img', $fileNameToStore);
         } else{
             $fileNameToStore = '';
         }
 
         $post = new Post();
-        $post->title = $request->title;
-        $post->description = $request->description;
+        $post->fill($request->all());
         $post->img = $fileNameToStore;
-        $post->save();
+        $post->user_id = auth()->user()->id;
+        
+        if($post->save()){
+            $message = "Successfully save";
+        }
 
-        return redirect('/posts');
+        return redirect('/posts')->with('message', $message);
     }
 
     /**
@@ -81,11 +83,13 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Post $post)
     {
-        $post = Post::find($id);
-      
-        return view('posts.show', compact('post'));
+        $post = Post::find($post->id);
+        //select * from users where id = $id
+
+        $comments = $post->comments;
+        return view('posts.show', compact('post', 'comments'));
 
     }
 
@@ -95,10 +99,8 @@ class PostController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Post $post)
     {
-        $post = Post::find($id);
-
         return view('posts.edit', compact('post'));
     }
 
